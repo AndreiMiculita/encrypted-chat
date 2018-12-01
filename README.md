@@ -1,2 +1,2 @@
 # encrypted-chat
-Encrypted chat application I made as a project for school
+Very basic encrypted chat application I made as a project for school
