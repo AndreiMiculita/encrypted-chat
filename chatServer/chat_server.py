@@ -116,20 +116,30 @@ def handle_client(client):  # Takes client socket as argument.
     get_username_thread.join()
 
     while True:
-        encrypted_msg = client.recv(BUFSIZ)
-        msg = decrypt_msg(encrypted_msg)
-        if msg != "/quit":
-            broadcast(msg, clients[client] + ": ")
-        else:
-            # if the client wants to quit
-            os.remove(f'pubk{addresses[client][0]}-{addresses[client][1]}')
+        try:
+            encrypted_msg = client.recv(BUFSIZ)
+            msg = decrypt_msg(encrypted_msg)
+            if msg != "/quit":
+                broadcast(msg, clients[client] + ": ")
+            else:
+                # if the client wants to quit
+                os.remove(f'pubk{addresses[client][0]}-{addresses[client][1]}')
+                client.close()
+                leaver_name = clients[client]
+                del clients[client]
+                del addresses[client]
+                del client
+                broadcast("%s disconnected." % leaver_name)
+                print("%s disconnected." % leaver_name)
+                break
+        except ConnectionResetError:
+            print(f'connection to {addresses[client][0]}-{addresses[client][1]} was reset, deleting public key')
             client.close()
             leaver_name = clients[client]
             del clients[client]
             del addresses[client]
             del client
-            broadcast("%s disconnected." % leaver_name)
-            print("%s disconnected." % leaver_name)
+            broadcast("%s lost connection." % leaver_name)
             break
 
 
@@ -181,7 +191,6 @@ SERVER.bind(ADDR)
 
 if __name__ == "__main__":
     generate_rsa_key()
-    print(get_public_rsa_key())
     SERVER.listen(5)
     print("No one connected.")
     ACCEPT_THREAD = Thread(target=accept_client)
